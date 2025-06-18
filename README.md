@@ -23,3 +23,5 @@ While it isn't mandatory for the weights to divide by 100, it does make calculat
 
 # Notes: 
 Due to global keyboard input checking, this script requires root to function in POSIX environments (such as Linux). As far as I know, there is no workaround for this, and you will be prompted to run the script as root if you try to run it non root.
+
+Currently, the slots list is configured for Stake and includes 498 slots. I will occasionally update the list with new slot releases.
