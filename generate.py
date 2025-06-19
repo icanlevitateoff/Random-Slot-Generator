@@ -12,7 +12,7 @@ def check_root_permission():
             sys.exit(1)
 
 def load_config(filename="config.txt"):
-    config = {'currency_prefix': '$', 'check_duplicates': 'false', 'generate_hotkey': 'f9'}  # defaults
+    config = {'currency_prefix': '$', 'check_duplicates': 'false', 'generate_hotkey': 'f9', 'enable_bet': 'true', 'enable_spin_count': 'true'}
     if not os.path.isfile(filename):
         print("⚠️ config.txt not found. Using defaults.")
         return config
@@ -58,7 +58,7 @@ def load_weighted_values(filename, check_duplicates=False):
         check_duplicates_in_list(values, filename)
     return values, weights
 
-def generate_spin_bet_slot(slots, spin_data, bet_data, currency_prefix):
+def generate_spin_bet_slot(slots, spin_data, bet_data, currency_prefix, enable_spin, enable_bet):
     spin_counts, spin_weights = spin_data
     bet_sizes, bet_weights = bet_data
 
@@ -66,11 +66,18 @@ def generate_spin_bet_slot(slots, spin_data, bet_data, currency_prefix):
         print("Error: No slots loaded.")
         return
 
-    spin = random.choices(spin_counts, weights=spin_weights, k=1)[0]
-    bet = random.choices(bet_sizes, weights=bet_weights, k=1)[0]
     slot = random.choice(slots)
+    parts = [f"🎰 Slot: {slot}"]
 
-    print(f"🎰 Slot: {slot} | Spin Count: {spin} | 💰 Bet Size: {currency_prefix}{bet:.2f}")
+    if enable_spin and spin_counts:
+        spin = random.choices(spin_counts, weights=spin_weights, k=1)[0]
+        parts.append(f"Spin Count: {spin}")
+
+    if enable_bet and bet_sizes:
+        bet = random.choices(bet_sizes, weights=bet_weights, k=1)[0]
+        parts.append(f"💰 Bet Size: {currency_prefix}{bet:.2f}")
+
+    print(" | ".join(parts))
 
 def main():
     check_root_permission()
@@ -79,12 +86,14 @@ def main():
     check_duplicates = config.get('check_duplicates', 'false').lower() == 'true'
     currency_prefix = config.get('currency_prefix', '$')
     generate_hotkey = config.get('generate_hotkey', 'f9').lower()
+    enable_spin = config.get('enable_spin_count', 'true').lower() == 'true'
+    enable_bet = config.get('enable_bet', 'true').lower() == 'true'
 
     slots = load_slots("slots.txt", check_duplicates)
     spin_data = load_weighted_values("spincount.txt", check_duplicates)
     bet_data = load_weighted_values("bet.txt", check_duplicates)
 
-    if not slots or not spin_data[0] or not bet_data[0]:
+    if not slots or (enable_spin and not spin_data[0]) or (enable_bet and not bet_data[0]):
         print("Error loading one or more files. Exiting.")
         return
 
@@ -96,7 +105,7 @@ def main():
                 print("Exiting.")
                 break
             elif event.name == generate_hotkey:
-                generate_spin_bet_slot(slots, spin_data, bet_data, currency_prefix)
+                generate_spin_bet_slot(slots, spin_data, bet_data, currency_prefix, enable_spin, enable_bet)
 
 if __name__ == "__main__":
     main()
