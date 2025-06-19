@@ -13,8 +13,11 @@ Generates a random slot, bet size and spin count (supports weighted bet sizes an
 
 # Configuration:
 General options are in config.txt
+
 You can add new slots in slots.txt
+
 You can configure bet sizes in bet.txt
+
 You can configure  spin count sizes in spincount.txt
 
 Format is the left side being the outcome, right side being the weight.
