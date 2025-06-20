@@ -3,3 +3,4 @@ check_duplicates = true
 generate_hotkey = f9
 enable_bet = true
 enable_spin_count = true
+track_picked_slots = true

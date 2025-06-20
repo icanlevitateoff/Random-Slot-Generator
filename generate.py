@@ -2,6 +2,9 @@ import random
 import keyboard
 import os
 import sys
+import atexit
+
+picked_file_path = "picked.txt"
 
 def check_root_permission():
     if os.name == 'posix':
@@ -12,7 +15,8 @@ def check_root_permission():
             sys.exit(1)
 
 def load_config(filename="config.txt"):
-    config = {'currency_prefix': '$', 'check_duplicates': 'false', 'generate_hotkey': 'f9', 'enable_bet': 'true', 'enable_spin_count': 'true'}
+    config = {'currency_prefix': '$', 'check_duplicates': 'false', 'generate_hotkey': 'f9',
+              'enable_bet': 'true', 'enable_spin_count': 'true', 'track_picked_slots': 'false'}
     if not os.path.isfile(filename):
         print("⚠️ config.txt not found. Using defaults.")
         return config
@@ -58,7 +62,21 @@ def load_weighted_values(filename, check_duplicates=False):
         check_duplicates_in_list(values, filename)
     return values, weights
 
-def generate_spin_bet_slot(slots, spin_data, bet_data, currency_prefix, enable_spin, enable_bet):
+def save_picked_slot(slot):
+    with open(picked_file_path, 'a') as f:
+        f.write(slot + '\n')
+
+def load_picked_slots():
+    if not os.path.exists(picked_file_path):
+        return []
+    with open(picked_file_path, 'r') as f:
+        return [line.strip() for line in f if line.strip()]
+
+def cleanup_picked_file():
+    if os.path.exists(picked_file_path):
+        os.remove(picked_file_path)
+
+def generate_spin_bet_slot(slots, spin_data, bet_data, currency_prefix, enable_spin, enable_bet, track_picked):
     spin_counts, spin_weights = spin_data
     bet_sizes, bet_weights = bet_data
 
@@ -66,7 +84,19 @@ def generate_spin_bet_slot(slots, spin_data, bet_data, currency_prefix, enable_s
         print("Error: No slots loaded.")
         return
 
-    slot = random.choice(slots)
+    available_slots = slots
+    if track_picked:
+        picked = load_picked_slots()
+        available_slots = [slot for slot in slots if slot not in picked]
+        if not available_slots:
+            print("✅ All slots have been picked. Resetting picked list.")
+            cleanup_picked_file()
+            available_slots = slots
+
+    slot = random.choice(available_slots)
+    if track_picked:
+        save_picked_slot(slot)
+
     parts = [f"🎰 Slot: {slot}"]
 
     if enable_spin and spin_counts:
@@ -88,6 +118,7 @@ def main():
     generate_hotkey = config.get('generate_hotkey', 'f9').lower()
     enable_spin = config.get('enable_spin_count', 'true').lower() == 'true'
     enable_bet = config.get('enable_bet', 'true').lower() == 'true'
+    track_picked = config.get('track_picked_slots', 'false').lower() == 'true'
 
     slots = load_slots("slots.txt", check_duplicates)
     spin_data = load_weighted_values("spincount.txt", check_duplicates)
@@ -98,6 +129,8 @@ def main():
         return
 
     print(f"Press {generate_hotkey.upper()} to generate a new slot/spin/bet... (ESC to exit)")
+    atexit.register(cleanup_picked_file)
+
     while True:
         event = keyboard.read_event()
         if event.event_type == keyboard.KEY_DOWN:
@@ -105,7 +138,7 @@ def main():
                 print("Exiting.")
                 break
             elif event.name == generate_hotkey:
-                generate_spin_bet_slot(slots, spin_data, bet_data, currency_prefix, enable_spin, enable_bet)
+                generate_spin_bet_slot(slots, spin_data, bet_data, currency_prefix, enable_spin, enable_bet, track_picked)
 
 if __name__ == "__main__":
     main()
