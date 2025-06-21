@@ -53,7 +53,7 @@ def load_weighted_values(filename, check_duplicates=False):
                 try:
                     value_str, weight_str = line.strip().split('=')
                     value = int(value_str.strip())
-                    weight = int(weight_str.strip())
+                    weight = float(weight_str.strip())  # decimal weights supported
                     values.append(value)
                     weights.append(weight)
                 except ValueError:
