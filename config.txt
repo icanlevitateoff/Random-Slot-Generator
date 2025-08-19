@@ -4,3 +4,5 @@ generate_hotkey = f9
 enable_bet = true
 enable_spin_count = true
 track_picked_slots = true
+auto_update_slots = true
+slots_url = https://raw.githubusercontent.com/icanlevitateoff/Random-Slot-Generator/refs/heads/main/slots.txt

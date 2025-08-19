@@ -3,6 +3,7 @@ import keyboard
 import os
 import sys
 import atexit
+import urllib.request
 
 picked_file_path = "picked.txt"
 
@@ -15,8 +16,16 @@ def check_root_permission():
             sys.exit(1)
 
 def load_config(filename="config.txt"):
-    config = {'currency_prefix': '$', 'check_duplicates': 'false', 'generate_hotkey': 'f9',
-              'enable_bet': 'true', 'enable_spin_count': 'true', 'track_picked_slots': 'false'}
+    config = {
+        'currency_prefix': '$',
+        'check_duplicates': 'false',
+        'generate_hotkey': 'f9',
+        'enable_bet': 'true',
+        'enable_spin_count': 'true',
+        'track_picked_slots': 'false',
+        'auto_update_slots': 'false',
+        'slots_url': None
+    }
     if not os.path.isfile(filename):
         print("⚠️ config.txt not found. Using defaults.")
         return config
@@ -32,14 +41,28 @@ def check_duplicates_in_list(data, filename):
     if duplicates:
         print(f"⚠️ Warning: Duplicate values found in {filename}: {duplicates}")
 
-def load_slots(filename="slots.txt", check_duplicates=False):
+def load_slots(filename="slots.txt", check_duplicates=False, auto_update=False, slots_url=None):
+    if auto_update and slots_url:
+        try:
+            print("🌐 Fetching latest slots list from GitHub...")
+            response = urllib.request.urlopen(slots_url, timeout=10)
+            data = response.read().decode("utf-8")
+            with open(filename, "w") as f:
+                f.write(data)
+            print("✅ Slots list updated from GitHub.")
+        except Exception as e:
+            print(f"⚠️ Failed to fetch slots from URL ({e}). Falling back to local {filename}.")
+
     if not os.path.isfile(filename):
         print(f"Error: {filename} not found.")
         return []
+
     with open(filename, 'r') as f:
         slots = [line.strip() for line in f if line.strip()]
+
     if check_duplicates:
         check_duplicates_in_list(slots, filename)
+
     return slots
 
 def load_weighted_values(filename, check_duplicates=False):
@@ -119,8 +142,10 @@ def main():
     enable_spin = config.get('enable_spin_count', 'true').lower() == 'true'
     enable_bet = config.get('enable_bet', 'true').lower() == 'true'
     track_picked = config.get('track_picked_slots', 'false').lower() == 'true'
+    auto_update_slots = config.get('auto_update_slots', 'false').lower() == 'true'
+    slots_url = config.get('slots_url', None)
 
-    slots = load_slots("slots.txt", check_duplicates)
+    slots = load_slots("slots.txt", check_duplicates, auto_update=auto_update_slots, slots_url=slots_url)
     spin_data = load_weighted_values("spincount.txt", check_duplicates)
     bet_data = load_weighted_values("bet.txt", check_duplicates)
 
